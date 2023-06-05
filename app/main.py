@@ -1,13 +1,23 @@
 import sys
 import os
 import zlib
-
 def main():
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!")
-
-    # Uncomment this block to pass the first stage
-    
+    print("Now in the main() function")
+def gitInit():
+    os.mkdir(".git")
+    os.mkdir(".git/objects")
+    os.mkdir(".git/refs")
+    with open(".git/HEAD", "w") as f:
+        f.write("ref: refs/heads/master\n")
+def gitCatFile(input):
+    # make the git objects path from the input
+    path = ".git/objects/" + input[0:2] + "/" + input[2:]
+    # read contents -> decompress -> parse the data
+    str = open(path, "rb").read()
+    raw = zlib.decompress(str)
+    y = raw.find(b"\x00")
+    print(raw[y + 1 :].decode(), end="")
+def main():
     command = sys.argv[1]
     if command == "init":
         os.mkdir(".git")
@@ -15,23 +25,12 @@ def main():
         os.mkdir(".git/refs")
         with open(".git/HEAD", "w") as f:
             f.write("ref: refs/heads/master\n")
-        print("Initialized git directory")
+        print("--completed writing the contents for init")
+        gitInit()
+        # print("--completed writing the contents for init")
     elif command == "cat-file":
-        if sys.argv[2] != "-p":
-            raise RuntimeError(f"Expected cat-file -p")
-        blob_sha = sys.argv[3]
-        try:
-            blob_content = open(
-                f".git/objects/{blob_sha[:2]}/{blob_sha[2:]}", "rb"
-            ).read()
-        except:
-            raise RuntimeError(f"Not a valid object name {blob_sha}")
-        data = zlib.decompress(blob_content)
-        if data.startswith(b"blob"):
-            data = data[data.find(b"\x00") + 1 :]
-            print(data.decode("utf-8"), end="")
-        else:
-            raise RuntimeError(f"Unknown command #{command}")
-
+        gitCatFile(sys.argv[3])
+    else:
+        raise RuntimeError("unimplemented command: {command}")
 if __name__ == "__main__":
     main()
